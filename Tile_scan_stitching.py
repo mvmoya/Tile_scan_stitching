@@ -62,9 +62,6 @@ imageWidth = imp.getFileInfo().width
 tileWidth = imageWidth / xTiles
 seamOverlay = gui.Overlay()
 
-arrayData = impProcessor.getFloatArray()
-trimmedArray = []
-
 if not manually:
 	factor = pixelHeight / 0.3126 # This seems to be the smallest pixel value for our standard tile scans?
 	
