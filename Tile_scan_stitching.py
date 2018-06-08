@@ -1,5 +1,5 @@
 ## Tile_scan_stitching v0.1
-## Delveoped by Vicky Moya 06/02/2018 (last update: 06/08/2018)
+## Developed by VMoya 06/02/2018 (last update: 06/08/2018)
 ## Welcome to Tile_scan_stitching!
 ## This program works best when run on a RGB composite image that was acquired as a tile scan
 ## on the LSM 700 in the Heintz Lab. Pixel height data is key for the default seam overlays
