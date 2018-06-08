@@ -1,3 +1,15 @@
+## Tile_scan_stitching v0.1
+## Delveoped by Vicky Moya 06/02/2018 (last update: 06/08/2018)
+## Welcome to Tile_scan_stitching!
+## This program works best when run on a RGB composite image that was acquired as a tile scan
+## on the LSM 700 in the Heintz Lab. Pixel height data is key for the default seam overlays
+## to be representative of the likely seams, but the program offers the opportunity to set the
+## width of the seams manually should this automated part fail. 100X images are not currently
+## supported.
+## Again, the program works best when pixel resolution was carried over in microns. If not,
+## the estimation of the seams will be totally off.
+## Good luck and happy stitching!
+
 import ij.plugin as plugin
 import ij.gui as gui
 import ij.process
@@ -14,7 +26,7 @@ pixelHeight = round(imp.getLocalCalibration().pixelHeight, 4)
 name = imp.getShortTitle().upper()
 magnification = ''
 
-if [x in name for x in ['5X', '10X', '20X', '40X', '63X', '100X']].count(True) == 1:
+if [x in name for x in ['5X', '10X', '20X', '40X', '63X']].count(True) == 1:
 	window = gui.NonBlockingGenericDialog("Specify Tile Scan Properties")
 	window.addMessage("What are the tile scan dimensions?")
 	window.addNumericField('Height:  ', 2.0, 1)
@@ -36,7 +48,7 @@ else:
 	window.addMessage('What are the tile scan dimensions?')
 	window.addNumericField('Height:  ', 2.0, 1)
 	window.addNumericField('Width:  ', 3.0, 1)
-	window.addChoice('Magnification:  ', ['5X', '10X', '20X', '40X', '63X', '100X'], '10X')
+	window.addChoice('Magnification:  ', ['5X', '10X', '20X', '40X', '63X'], '10X')
 	window.addCheckbox('Set seam sizes manually?   ', False)
 	window.addCheckbox('Approve seams first?   ', True)
 	window.showDialog()
@@ -53,6 +65,7 @@ else:
 if xTiles != xTiles or yTiles != yTiles:
     errorDialog = gui.NonBlockingGenericDialog('Error')
 	errorDialog.addMessage('Dimensions should be expressed as valid integers')
+	errorDialog.hideCancelButton()
 	errorDialog.showDialog()
 	raise ValueError('Dimensions should be expressed as valid integers')
 
@@ -73,13 +86,14 @@ if not manually:
 		seamHeight = 12 / factor
 		seamWidth = 0 / factor	
         
-	#elif '40X' in name or magnification == '40X':
-	#	pass
-	#elif '60X' in name or magnification == '63X':
-	#	pass
-	#elif '100X' in name or magnification == '100X':
-	#	pass
-	
+	elif '40X' in name or magnification == '40X':
+		seamHeight = 8 / factor
+		seamWidth = 6 / factor
+		
+	elif '63X' in name or magnification == '63X':
+		seamHeight = 3 / factor
+		seamWidth = 0 / factor
+
 	elif '5X' in name or magnification == '5X':	
 		seamHeight = 24 / factor
 		seamWidth = 0 / factor
@@ -88,19 +102,20 @@ if not manually:
 		errorDialog = gui.NonBlockingGenericDialog('Oops, Sorry!')
 		errorDialog.addMessage("She hasn't added this functionality yet!")
 		errorDialog.showDialog()
-		raise Exception('Check back later! GTFO')
+		raise Exception('Check back later!')
 
-	for i in range(yTiles - 1):
+	for i in range(int(yTiles) - 1):
 		hSeam = gui.Roi(0, tileHeight + tileHeight * i, imageWidth, seamHeight)
 		seamOverlay.add(hSeam)
 
-		for j in range(xTiles - 1):	
+		for j in range(int(xTiles) - 1):	
 			vSeam = gui.Roi(tileWidth + tileWidth * j, 0, seamWidth, imageHeight)
 			seamOverlay.add(vSeam)
 
 	imp.setOverlay(seamOverlay)
 	window = gui.NonBlockingGenericDialog("Approve the seams")
-	window.addMessage("Zoom in and check that the seams\r\nare in the correct places.\r\nThen click OK.\r\nIf wrong, click Cancel.")
+	window.addMessage("Zoom in and check that the seams\r\nare in the correct places.\r\nThen click OK.\r\nIf wrong, click Adjust.")
+	window.setCancelLabel('Adjust')
 	window.showDialog()
 	
 	if window.wasCanceled():	
@@ -119,10 +134,11 @@ while manually:
 	window.addMessage('Set the sizes of the seams in pixels')
 	window.addNumericField('Horizontal seam (px):   ', seamHeight, 1)
 	window.addNumericField('Vertical seam (px):   ', seamWidth, 1)
+	window.setOKLabel('Update seams')
 	window.showDialog()
 	
 	if window.wasCanceled():	
-		raise Exception('GTFO')
+		raise Exception('Was Canceled')
 		break
 		
 	seamHeight = window.getNextNumber()
@@ -131,6 +147,7 @@ while manually:
 	if seamHeight != seamHeight or seamWidth != seamWidth:	
 		errorDialog = gui.NonBlockingGenericDialog()
 		errorDialog.addMessage('Seam sizes must be valid integers')
+		errorDialog.hideCancelButton()
 		errorDialog.showDialog()
 		raise ValueError('Seam sizes must be valid integers')
 		break
@@ -138,17 +155,18 @@ while manually:
 	imp.setOverlay(gui.Overlay())
 	seamOverlay = gui.Overlay()
 	
-	for i in range(yTiles - 1):
+	for i in range(int(yTiles) - 1):
 		hSeam = gui.Roi(0, tileHeight + tileHeight * i, imageWidth, seamHeight)
 		seamOverlay.add(hSeam)
 
-		for j in range(xTiles - 1):	
+		for j in range(int(xTiles) - 1):	
 			vSeam = gui.Roi(tileWidth + tileWidth * j, 0, seamWidth, imageHeight)
 			seamOverlay.add(vSeam)
 
 	imp.setOverlay(seamOverlay)
 	window = gui.NonBlockingGenericDialog("Approve the seams")
 	window.addMessage("Zoom in and check that the seams\r\nare in the correct places.\r\nThen click OK.\r\nIf wrong, click Cancel.")
+	window.setCancelLabel('Adjust')
 	window.showDialog()
 	
 	if window.wasCanceled():	
@@ -157,7 +175,7 @@ while manually:
 	elif window.wasOKed():		
 		break
 
-for i in range(yTiles):
+for i in range(int(yTiles)):
 	if i == 0:	
 		yMin = seamHeight
 		
@@ -166,7 +184,7 @@ for i in range(yTiles):
 	
 	yMax = tileHeight - seamHeight
     
-	for j in range(xTiles):			
+	for j in range(int(xTiles)):			
 		if j == 0:		
 			xMin = seamWidth
 			
